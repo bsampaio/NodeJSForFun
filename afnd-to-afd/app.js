@@ -78,21 +78,6 @@ var parseAFND = function(afnd) {
 
 afnd = parseAFND(afnd);
 
-function inserirTransicao(transicoesAFD, transicoesAFND) {
-  for (var i = 0; i < transicoesAFND.length; i++) {}
-  return transicoesAFD;
-}
-
-var construirAFD = function(afnd) {
-  var afd;
-  var transicoesAFND = afnd.transicoes;
-  var transicoesAFD = [];
-  //Preenche os estados possíveis para as transicoes do AFD
-  transicoesAFD = inserirTransicao(transicoesAFD, transicoesAFND);
-
-  return transicoesAFND;
-};
-
 function obterDestinosUnicos(transicoesAFND) {
   var destinosUnicos = [];
   for (var i = 0; i < transicoesAFND.length; i++) {
@@ -110,8 +95,6 @@ function obterDestinosUnicos(transicoesAFND) {
   return _.uniq(destinosUnicos.sort());
 }
 
-//console.log(afnd);
-
 function buscarDestino(transicoes, origem, simbolo) {
   for (var i = 0; i < transicoes.length; i++) {
     //console.log('RecOrig: '+origem+' RecSim: '+simbolo+' CurrOrig: '+transicoes[i].origem+' CurrSim: '+transicoes[i].simbolo);
@@ -122,8 +105,51 @@ function buscarDestino(transicoes, origem, simbolo) {
   }
 }
 
+function calculaTransicao(afnd, transicaoAFD) {
+  var transicoes = [];
+  for (var j = 0; j < afnd.alfabeto.length; j++) {
+    var transicao = {
+      origem: transicaoAFD,
+      simbolo: afnd.alfabeto[j],
+      destino: []
+    };
+    if (transicaoAFD.length > 1) {
+      var destTmp = [];
+      for (var k = 0; k < transicaoAFD.length; k++) {
+        var dest = buscarDestino(afnd.transicoes, transicaoAFD[k], afnd.alfabeto[j]);
+        if (typeof dest != 'undefined') {
+          if (isNaN(dest) && dest.length < 2)
+            destTmp[destTmp.length] = '';
+          else
+            destTmp[destTmp.length] = dest;
+        }
+      }
+      destTmp = _.reduceRight(destTmp, function(a, b) {
+        return a.concat(b);
+      }, []);
+      transicao.destino = _.uniq(destTmp).sort();
+    } else {
+      var defined = (typeof transicaoAFD[0] != 'undefined');
+      var isnan = isNaN(transicaoAFD[0]);
+      if (defined && isnan) {
+        transicao.destino = [''];
+      } else {
+        var destTmp = buscarDestino(afnd.transicoes, transicaoAFD, afnd.alfabeto[j]) || '';
+        if (isNaN(destTmp[0])) {
+          destTmp = '';
+        }
+        transicao.destino = destTmp;
+      }
+    }
+    transicoes[transicoes.length] = transicao;
+  }
+  return transicoes;
+}
+
 var transicoesAFD = _.without(obterDestinosUnicos(afnd.transicoes), NaN);
+transicoesAFD = _.without(transicoesAFD, [NaN]);
 transicoesAFD = _.union(transicoesAFD, [0]).sort();
+
 for (var i = 0; i < afnd.transicoes.length; i++) {
   //Verificar se o destino não existe em AFD
   if (!(afnd.transicoes[i].destinos in transicoesAFD)) {
@@ -134,28 +160,12 @@ for (var i = 0; i < afnd.transicoes.length; i++) {
 
 var transicoes = [];
 for (var i = 0; i < transicoesAFD.length; i++) {
-  for (var j = 0; j < afnd.alfabeto.length; j++) {
-    var transicao = {
-        origem: transicoesAFD[i],
-        simbolo: afnd.alfabeto[j],
-        destino: []
-      };
-    if (transicoesAFD[i].length > 1) {
-      var destTmp = [];
-      for (var k = 0; k < transicoesAFD[i].length; k++) {
-        destTmp[destTmp.length] = buscarDestino(afnd.transicoes, transicoesAFD[k], afnd.alfabeto[j]);
-      }
-      transicao.destino = destTmp;
-    } else {
-      var defined = (typeof transicoesAFD[i][0] != 'undefined');
-      var isnan = isNaN(transicoesAFD[i][0]);
-      if(defined && isnan){
-        transicao.destino = [''];
-      }else{
-        transicao.destino = buscarDestino(afnd.transicoes, transicoesAFD[i], afnd.alfabeto[j]);
-      }
+  if (isNaN(transicoesAFD[i])) {
+    if (!isNaN(transicoesAFD[i][0])) {
+      transicoes = _.union(transicoes,calculaTransicao(afnd, transicoesAFD[i]));
     }
-    transicoes[transicoes.length] = transicao;
+  } else {
+    transicoes = _.union(transicoes,calculaTransicao(afnd, transicoesAFD[i]));
   }
 }
-console.log(_.without(transicoes);
+console.log(transicoes);
