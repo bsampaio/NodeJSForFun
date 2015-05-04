@@ -1,0 +1,10 @@
+Alfabeto: a b c
+Num-estados: 5
+Estado-inicial: 0
+Estados-finais: 4 5
+Transicoes:
+0/a -> {1 2}
+0/b -> {1 3}
+0/c -> {}
+1/a -> {1}
+1/b -> {2}
