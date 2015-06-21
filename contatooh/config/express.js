@@ -7,8 +7,6 @@ var methodOverride = require('method-override');
 //Local imports
 var home = require('../app/routes/home');
 
-
-
 module.exports = function(){
   var app = express();
 
@@ -28,4 +26,4 @@ module.exports = function(){
     .into(app);
 
   return app;
-}
+};
